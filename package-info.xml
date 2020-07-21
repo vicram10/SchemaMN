@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<!DOCTYPE package-info SYSTEM "http://www.simplemachines.org/xml/package-info">
+<package-info xmlns="http://www.simplemachines.org/xml/package-info" xmlns:smf="http://www.simplemachines.org/">
+	<id>thedarkness:SchemaMN</id>
+	<name>MN Schemas - Structured Data</name>
+	<version>0.1 Beta 1 [20-07-2020 23:05]</version>
+	<type>modification</type>
+
+	<install for="2.1.*">
+		<require-dir name="SchemaMN" destination="$sourcedir">Important Files</require-dir>
+		<require-dir name="Themes" destination="$boarddir">Languages Files</require-dir>
+		<database>mnSchemaHooks.php</database>
+		<redirect url="?action=admin;area=mnschema" timeout="1000" />
+	</install>
+
+	<uninstall for="2.1.*">
+		<database>mnSchemaRemove.php</database>
+		<remove-dir name="$sourcedir/SchemaMN" />
+		<redirect url="?action=admin;area=packages;sa=browse" timeout="1000" />
+	</uninstall>
+
+</package-info>

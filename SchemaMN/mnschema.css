@@ -1,0 +1,23 @@
+.badge{
+    border-radius:5px;
+    padding:3px;
+    font-weight:bold;
+    text-transform: none;
+}
+.badge-success{
+    background:green;
+    color:white;
+}
+.badge-error{
+    background:darkred;
+    color:white;
+}
+.badge-warning, .badge-warning a:visited, .badge-warning a:hover{
+    background: orange;
+    color: #fff !important;
+    font-weight: 700;
+    border: 1px solid #f49a3a;
+    box-shadow: 0 5px 5px rgba(255,255,255,.2) inset;
+    text-shadow: 1px 1px 3px rgba(0,0,0,.6);
+    text-decoration: none !important;
+}
