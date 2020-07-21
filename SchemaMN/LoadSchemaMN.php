@@ -198,7 +198,6 @@ class LoadSchemaMN
         global $context;
         $schema_values = array();
         //load all fields
-        //{"7":{"value":"body"},"8":{"value":"Ejemplo de acerca de"}}
         LoadSchemaMN::getFieldsSchemaBoard($schema_id);
         if (count($context['fields_itemprop']) > 0){
             foreach($context['fields_itemprop'] as $id => $values){
