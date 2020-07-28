@@ -590,30 +590,27 @@ class SchemaMN
         if ($context['current_action'] == 'post2'){
             $schema_id = !empty($_GET['sch']) ? (int) $_GET['sch'] : 0;
             if (empty($schema_id)){return;}
-            $schema_values = LoadSchemaMN::getFieldsValuesJson($schema_id);
             $smcFunc['db_query']('',
                 'UPDATE {db_prefix}topics
-                SET mnschema_id = {int:id_schema}, 
-					mnschema_values = {string:schema_value}
+                SET mnschema_id = {int:id_schema}
                 WHERE id_topic = {int:topic_id}',
                 array(
 					'id_schema' => $schema_id,
-                    'schema_value' => $schema_values,
                     'topic_id' => $topic,
                 )
             );
+            //update or insert
+            LoadSchemaMN::setFieldsValues($schema_id, $topic);
         }else{
             $schema_id = 0;
             //catch, all values, editing first message
             if (!$context['is_new_topic']){
-                $schema = LoadSchemaMN::getTopicSchemaOptions($topic);
-				$value_schema = explode('|', $schema);
-                $schema_values_topic = json_decode($value_schema[1]);
-                $schema_id = $value_schema[0];
+                LoadSchemaMN::getTopicSchemaOptions($topic);
+                $schema_id = $context['id_schema'];
             }else{
                 $schema_id = !empty($_GET['sch']) ? (int) $_GET['sch'] : 0;
             }
-            if (empty($schema_id) && $context['is_new_topic']){return;}
+            if (empty($schema_id)){return;}
 
             //add id of schema, form action url
             $context['destination'] .= ';sch='.$schema_id;
@@ -622,14 +619,14 @@ class SchemaMN
             LoadSchemaMN::getFieldsSchemaBoard($schema_id);
             $id_first_message = 0;
             if (!empty($topic)){ $id_first_message = LoadSchemaMN::getTopicFirstMessageId($topic); }
-
+            
             //ok, go it
             if (!empty($context['is_first_post'])
                 || (isset($_REQUEST['msg']) && $_REQUEST['msg'] == $id_first_message)
                 ) {
                 foreach($context['fields_itemprop'] as $id => $values){
                     if (empty($values['subtype'])){
-                        $value_prop = !empty($schema_values_topic->{$id}->{'value'}) ? $schema_values_topic->{$id}->{'value'} : '';
+                        $value_prop = !empty($context['schema_props'][$id]['itemprop_value']) ? $context['schema_props'][$id]['itemprop_value'] : '';
                         $context['posting_fields']['itemprop_'.$id] = array(
                             'label' => array(
                                 'text' => $values['label'],
@@ -641,15 +638,16 @@ class SchemaMN
                                     'size' => 80,
                                     'maxlength' => 255,
                                     'value' => $value_prop,
-                                    'required' => true,
+                                    'required' => false,
                                 ),
                             ),
                         );
                     }
                 }
-				$idx = 0;
+                $idx = 0;
+                
                 foreach($context['fields_itemprop_sub'] as $id => $values){
-                    $value_prop = !empty($schema_values_topic->{$values['itemprop_id']}->{'subtypes'}[$idx]->{'sub_value'}) ? $schema_values_topic->{$values['itemprop_id']}->{'subtypes'}[$idx]->{'sub_value'} : '';
+                    $value_prop = !empty($context['schema_subprops'][$id]['itemprop_value']) ? $context['schema_subprops'][$id]['itemprop_value'] : '';
                     $context['posting_fields']['itemprop_sub_'.$id] = array(
                         'label' => array(
                             'text' => $values['label'] . ' ('. $values['label_prop'] .')',
@@ -661,7 +659,7 @@ class SchemaMN
                                 'size' => 80,
                                 'maxlength' => 80,
                                 'value' => $value_prop,
-                                'required' => true,
+                                'required' => false,
                             ),
                         ),
                     );
@@ -687,14 +685,17 @@ class SchemaMN
 		global $context;
         $schema_id = !empty($_GET['sch']) ? (int) $_GET['sch'] : 0;
         if (empty($schema_id)){return;}
-
-        $schema_values = LoadSchemaMN::getFieldsValuesJson($schema_id);
-
-        //end
 		$topic_columns['mnschema_id'] = 'int';
         $topic_parameters[] = $schema_id;
-		$topic_columns['mnschema_values'] = 'string-255';
-        $topic_parameters[] = $schema_values;
+    }
+
+    //What we do after creating the topic
+    public static function AfterCreateTopic(&$msgOptions, &$topicOptions, &$posterOptions){
+        global $context;
+        $schema_id = !empty($_GET['sch']) ? (int) $_GET['sch'] : 0;
+        if (empty($schema_id)){return;}
+
+        LoadSchemaMN::setFieldsValues($schema_id, $topicOptions['id']);
     }
 
     //add column mnschema_values
@@ -704,57 +705,55 @@ class SchemaMN
 
     //prepare display context hooks
     public static function PrepareDisplayContext(&$output, &$message, $counter){
-        global $topic;
+        global $topic, $context;
         $id_first_message = LoadSchemaMN::getTopicFirstMessageId($topic);
         $body = $output['body'];
         $schema = '';
         if ($output['id'] == $id_first_message){
-            $topic_schmn = LoadSchemaMN::getTopicSchemaOptions($topic);
-            $tp = explode('|', $topic_schmn);
-            if (empty($tp[0])){return;}
-			$schema_values = json_decode($tp[1]);
+            LoadSchemaMN::getTopicSchemaOptions($topic);
+            if (empty($context['id_schema'])){return;}
+            if (empty($context['schema_props']) && empty($context['schema_subprops'])){return;}
             $print_div = true;
-            foreach($schema_values as $id => $value){
-                if (!isset($value->{'subtypes'})){
-                    $prop_values = LoadSchemaMN::getItempropValues($id);
-                    //ini -> div
-                    if ($print_div){
-                        $schema .= '
-                        <div style="background:lightyellow;border:1px solid lightyellow;padding:10px;margin-top:20px;margin-bottom:20px;box-shadow: 0px 10px 10px gainsboro;" itemscope itemtype="'. $prop_values[$id]['url_schema'] .'">';
-                        $print_div = false;
-                    }
-                    //itemprops
+            foreach($context['schema_props'] as $id => $value){
+                $prop_values = LoadSchemaMN::getItempropValues($value['itemprop_id']);
+                //ini -> div
+                if ($print_div){
                     $schema .= '
-                        <p><span style="font-weight:bold;">'. $prop_values[$id]['label'] .':</span> <span itemprop="'. $prop_values[$id]['itemprop'] .'">'. (in_array($prop_values[$id]['itemprop'], array('image')) ? $value->{'value'} : $value->{'value'}) .'</span></p>';
+                    <div style="background:lightyellow;border:1px solid lightyellow;padding:10px;margin-top:20px;margin-bottom:20px;box-shadow: 0px 10px 10px gainsboro;" itemscope itemtype="'. $prop_values[$id]['url_schema'] .'">';
+                    $print_div = false;
                 }
+                //itemprops
+                $schema .= '
+                    <p><span style="font-weight:bold;">'. $prop_values[$value['itemprop_id']]['label'] .':</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. (in_array($prop_values[$value['itemprop_id']]['itemprop'], array('image')) ? $value['itemprop_value'] : $value['itemprop_value']) .'</span></p>';
+                
             }
             $show_subtypes = false;
-            $print_div = true;
-            foreach($schema_values as $id => $value){
-                if (isset($value->{'subtypes'})){
-                    $show_subtypes = true;
-                    foreach($value->{'subtypes'} as $idx => $subvalue){
-                        $prop_values = LoadSchemaMN::getSubItempropValues($subvalue->{'id'});
+            $itemprop_main = '';
+            foreach($context['schema_subprops'] as $id => $value){
+                $show_subtypes = true;
+                $prop_values = LoadSchemaMN::getSubItempropValues($value['itemprop_id']);
+                
+                //ini -> div
+                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+                    $schema .= '
+                    <div itemprop="'. $prop_values[$value['itemprop_id']]['itemprop_main'] .'" itemscope itemtype="'. $prop_values[$value['itemprop_id']]['url_schema'] .'">
+                    <p><strong>'. $prop_values[$value['itemprop_id']]['prop_label'].'</strong></p>';
+                    $itemprop_main = $prop_values[$value['itemprop_id']]['itemprop_main'];
+                }
+                //itemprops
+                $schema .= '
+                    <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';
 
-                        //ini -> div
-                        if ($print_div){
-                            $schema .= '
-                            <div itemprop="'. $prop_values[$subvalue->{'id'}]['itemprop_main'] .'" itemscope itemtype="'. $prop_values[$subvalue->{'id'}]['url_schema'] .'">
-                            <p><strong>'. $prop_values[$subvalue->{'id'}]['prop_label'].'</strong></p>';
-                            $print_div = false;
-                        }
-                        //itemprops
-                        $schema .= '
-                            <p><span><u>'. $prop_values[$subvalue->{'id'}]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$subvalue->{'id'}]['itemprop'] .'">'. $subvalue->{'sub_value'} .'</span></p>';
-                    }
+                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+                    $schema .= '
+                    </div>';//end -> div schema
+                    $itemprop_main = '';
                 }
             }
             if ($show_subtypes){
                 $schema .= '
                 </div>';//end -> div schema
             }
-
-
             //end principal div
             $schema .= '
             </div>';

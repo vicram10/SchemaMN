@@ -112,7 +112,8 @@ class LoadSchemaMN
         $context['fields_itemprop'] = array();
         $context['fields_itemprop_sub'] = array();
         $sql = $smcFunc['db_query']('',
-            'SELECT p.id, p.schema_prop itemprop, p.schema_prop_label label, p.schema_prop_type subtype
+            'SELECT p.id, p.schema_prop itemprop, p.schema_prop_label label, p.schema_prop_type subtype,
+                    m.schema_id name_schema
             FROM {db_prefix}mnschemas_prop p, {db_prefix}mnschemas m
             WHERE p.schema_id = m.id
             AND m.id = {int:id_schema}',
@@ -125,13 +126,18 @@ class LoadSchemaMN
                 'itemprop' => empty($row['subtype']) ? $row['itemprop'] : '',
                 'label' => $row['label'],
                 'subtype' => !empty($row['subtype']) ? $row['subtype'] : '',
+                'name_schema' => $row['name_schema'],
             );
         }
         $smcFunc['db_free_result']($sql);
 
         //itemprop with subtype
         $sql = $smcFunc['db_query']('',
-            'SELECT pp.id, pp.schema_prop_id itemprop_id, p.schema_prop_label label_prop, pp.schema_subprop_label label, p.schema_prop itemprop
+            'SELECT pp.id, pp.schema_prop_id itemprop_id, p.schema_prop_label label_prop, 
+                    pp.schema_subprop_label label, 
+                    p.schema_prop itemprop,
+                    pp.schema_prop subprop_schema,
+                    m.schema_id
             FROM {db_prefix}mnschemas m, {db_prefix}mnschemas_prop p, {db_prefix}mnschemas_subprop pp
             WHERE m.id = {int:id_schema}
             AND m.id = p.schema_id
@@ -144,8 +150,10 @@ class LoadSchemaMN
             $context['fields_itemprop_sub'][$row['id']] = array(
                 'itemprop' => $row['itemprop'],
                 'label' => $row['label'],
+                'subprop' => $row['subprop_schema'],
                 'label_prop' => $row['label_prop'],
                 'itemprop_id' => $row['itemprop_id'], //father
+                'schema_main' => $row['schema_id'],
             );
         }
         $smcFunc['db_free_result']($sql);
@@ -153,19 +161,58 @@ class LoadSchemaMN
 
     //topic schema value
     public static function getTopicSchemaOptions($id_topic){
-        global $smcFunc;
-        $schema_value = '';
+        global $smcFunc, $context;
         $sql = $smcFunc['db_query']('',
-            'SELECT t.mnschema_id, t.mnschema_values
-            FROM {db_prefix}topics t
-            WHERE t.id_topic = {int:topic_id}',
+            'SELECT t.mnschema_id, m.schema_id
+            FROM {db_prefix}topics t, {db_prefix}mnschemas m
+            WHERE t.id_topic = {int:topic_id}
+            AND t.mnschema_id = m.id',
             array(
                 'topic_id' => $id_topic,
             )
         );
-        list ($schema_id, $schema_value) = $smcFunc['db_fetch_row']($sql);
+        list ($schema_id, $schema_item) = $smcFunc['db_fetch_row']($sql);
         $smcFunc['db_free_result']($sql);
-        return $schema_id.'|'.$schema_value;
+        $context['id_schema'] = (int) $schema_id;
+        $context['schema_title'] = $schema_item;
+        //itemprop
+        $sql = $smcFunc['db_query']('',
+            "SELECT t.*
+            FROM {db_prefix}mnschemas_topics t
+            WHERE t.id_topic = {int:id_topic}
+            AND t.itemprop_depends = ''
+            ORDER BY t.id_itemprop",
+            array(
+                'id_topic' => $id_topic,
+            )
+        );
+        $context['schema_props'] = array();
+        while($row = $smcFunc['db_fetch_assoc']($sql)){
+            $context['schema_props'][$row['id_itemprop']] = array(
+                'itemprop_value' => $row['item_value'],
+                'itemprop_id' => (int) $row['id_itemprop'],
+            );
+        }
+        $smcFunc['db_free_result']($sql);
+        //itemprop_subtype
+        $sql = $smcFunc['db_query']('',
+            "SELECT t.*
+            FROM {db_prefix}mnschemas_topics t
+            WHERE t.id_topic = {int:id_topic}
+            AND t.itemprop_depends != ''
+            ORDER BY t.id_itemprop",
+            array(
+                'id_topic' => $id_topic,
+            )
+        );
+        $context['schema_subprops'] = array();
+        while($row = $smcFunc['db_fetch_assoc']($sql)){
+            $context['schema_subprops'][$row['id_itemprop']] = array(
+                'itemprop_value' => $row['item_value'],
+                'itemprop_id' => (int) $row['id_itemprop'],
+            );
+        }
+        $smcFunc['db_free_result']($sql);
     }
 
     /**
@@ -193,36 +240,100 @@ class LoadSchemaMN
 		return (int) $first_message_id;
     }
 
+    //return true if exists, else false
+    public static function ExistsItempropTopic($id, $id_topic){
+        global $smcFunc;
+        $exists = 0;
+        $sql = $smcFunc['db_query']('',
+            'SELECT count(1)
+            FROM {db_prefix}mnschemas_topics t
+            WHERE t.id_itemprop = {int:id_itemprop}
+            AND t.id_topic = {int:id_topic}', 
+            array(
+                'id_itemprop' => $id,
+                'id_topic' => $id_topic,
+            )
+        );
+        list($exists) = $smcFunc['db_fetch_row']($sql);
+        return !empty($exists) ? true : false;
+    }
+
     //generic function
-    public static function getFieldsValuesJson($schema_id){
-        global $context;
+    public static function setFieldsValues($schema_id, $id_topic){
+        global $context, $smcFunc;
+        $topic = $id_topic;
         $schema_values = array();
         //load all fields
         LoadSchemaMN::getFieldsSchemaBoard($schema_id);
         if (count($context['fields_itemprop']) > 0){
             foreach($context['fields_itemprop'] as $id => $values){
                 $itemprop = !empty($_POST['itemprop_'.$id]) ? $_POST['itemprop_'.$id] : '';
-                if (!empty($itemprop)){
-                    $schema_values[$id] = array(
-                        'value' => $itemprop,
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic)){
+                    $smcFunc['db_query']('',
+                        'UPDATE {db_prefix}mnschemas_topics t
+                        SET t.item_value = {string:item_value}
+                        WHERE t.id_topic = {int:id_topic}
+                        AND t.id_itemprop = {int:id_itemprop}',
+                        array(
+                            'item_value' => $itemprop,
+                            'id_topic' => $id_topic,
+                            'id_itemprop' => $id,
+                        )
                     );
+                    //delete the itemprops emptys
+                    $smcFunc['db_query']('',
+                        "DELETE FROM {db_prefix}mnschemas_topics t WHERE t.id_topic = {int:id_topic} AND t.id_itemprop = {int:id_itemprop} AND t.item_value = ''",
+                        array(
+                            'id_topic' => $id_topic,
+                            'id_itemprop' => $id,
+                        )
+                    );
+                }else{
+                    if (!empty($itemprop)){
+                        //add itemprops
+                        $id_reg = $smcFunc['db_insert']('', '{db_prefix}mnschemas_topics',
+                        array('reg_id' => 'int', 'id_schema' => 'int', 'schema_id' => 'string-255', 'id_topic' => 'int', 
+                            'id_itemprop' => 'int', 'itemprop' => 'string-255', 'item_value' => 'string', 'itemprop_subtype' => 'string-255', 
+                            'itemprop_depends' => 'string-255'),
+                            array(0, $schema_id, $values['name_schema'], $topic, $id, $values['itemprop'], $itemprop, $values['subtype'], ''),
+                            array('reg_id'),
+                            1
+                        );
+                    }
                 }
             }
         }
         if (count($context['fields_itemprop_sub']) > 0){
             foreach($context['fields_itemprop_sub'] as $id => $values){
                 $itemprop = !empty($_POST['itemprop_sub_'.$id]) ? $_POST['itemprop_sub_'.$id] : '';
-                if (!empty($itemprop)){
-                    $schema_values[$values['itemprop_id']]['subtypes'][] = array(
-                        'id' => $id,
-                        'sub_value' => $itemprop,
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic)){
+                    $smcFunc['db_query']('',
+                        'UPDATE {db_prefix}mnschemas_topics t
+                        SET t.item_value = {string:item_value}
+                        WHERE t.id_topic = {int:id_topic}
+                        AND t.id_itemprop = {int:id_itemprop}',
+                        array(
+                            'item_value' => $itemprop,
+                            'id_topic' => $id_topic,
+                            'id_itemprop' => $id,
+                        )
                     );
+                }else{
+                    if (!empty($itemprop)){
+                        //add itemprops
+                        $smcFunc['db_insert']('ignore', '{db_prefix}mnschemas_topics',
+                        array('reg_id' => 'int', 'id_schema' => 'int', 'schema_id' => 'string-255', 'id_topic' => 'int', 
+                            'id_itemprop' => 'int', 'itemprop' => 'string-255', 'item_value' => 'string', 'itemprop_subtype' => 'string-255', 
+                            'itemprop_depends' => 'string-255'),
+                            array(0, $schema_id, $values['schema_main'], $topic, 
+                                $id, $values['subprop'], $itemprop, '', $values['itemprop']),
+                            array('reg_id'),
+                            1
+                        );
+                    }
                 }
             }
         }
-        return json_encode($schema_values);
     }
 }
-
-
 ?>

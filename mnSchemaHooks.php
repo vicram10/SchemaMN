@@ -21,6 +21,7 @@
     add_integration_function('integrate_actions', 'SchemaMN::schemaAction', TRUE);
     add_integration_function('integrate_post_end', 'SchemaMN::TopicFieldsHooks', TRUE);
     add_integration_function('integrate_before_create_topic', 'SchemaMN::BeforeCreateTopic', TRUE);
+    add_integration_function('integrate_create_topic', 'SchemaMN::AfterCreateTopic', TRUE);
     add_integration_function('integrate_modify_post', 'SchemaMN::TopicFieldsHooks', TRUE);
     add_integration_function('integrate_display_topic', 'SchemaMN::DisplayTopic', TRUE);
     add_integration_function('integrate_prepare_display_context', 'SchemaMN::PrepareDisplayContext', TRUE);
@@ -162,23 +163,82 @@
             ),
         )
     );
+
+    $tables[] = array(
+        'name'    => 'mnschemas_topics',
+        'columns' => array(
+            array(
+                'name'     => 'reg_id',
+                'type'     => 'int',
+                'size'     => 10,
+                'unsigned' => true,
+                'auto'     => true
+            ),
+            array(
+                'name'     => 'id_schema',
+                'type'     => 'int',
+                'size'     => 10,
+            ),
+            array(
+                'name'     => 'schema_id',
+                'type'     => 'varchar',
+                'size' => 255,
+                'null' => true,
+            ),
+            array(
+                'name' => 'id_topic',
+                'type' => 'int',
+                'size' => 10,
+                'null' => false
+            ),
+            array(
+                'name' => 'id_itemprop',
+                'type' => 'int',
+                'size' => 10,
+                'null' => false
+            ),
+            array(
+                'name' => 'itemprop',
+                'type' => 'varchar',
+                'size' => 255,
+                'null' => false
+            ),
+            array(
+                'name'     => 'item_value',
+                'type'     => 'longtext',
+                'null' => true,
+            ),
+            array(
+                'name'     => 'itemprop_subtype',
+                'type'     => 'varchar',
+                'size'  => 255,
+                'null' => true,
+            ),
+            array(
+                'name'     => 'itemprop_depends',
+                'type'     => 'varchar',
+                'size' => 255,
+                'null' => true,
+            ),
+        ),
+        'indexes' => array(
+            array(
+                'type'    => 'primary',
+                'columns' => array('reg_id')
+            ),
+            array(
+                'columns' => array('itemprop_depends'),
+            ),
+        )
+    );
+
+    //create tables
     foreach($tables as $table)
         $smcFunc['db_create_table']('{db_prefix}' . $table['name'], $table['columns'], $table['indexes'], array(), 'ignore');
 
     //Schema Field for topics table
-    $smcFunc['db_add_column'](
-        '{db_prefix}topics',
-        array(
-            'name'    => 'mnschema_values',
-            'type'    => 'text',
-            'null'    => true,
-        ),
-        array(),
-        'default',
-        'do_nothing'
-    );
     //id_schema from topics
-    $smcFunc['db_add_column'](
+    /*$smcFunc['db_add_column'](
         '{db_prefix}topics',
         array(
             'name'    => 'mnschema_id',
@@ -188,5 +248,5 @@
         array(),
         'default',
         'do_nothing'
-    );
+    );*/
 ?>
