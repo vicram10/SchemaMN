@@ -275,7 +275,8 @@ class LoadSchemaMN
                 if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, false)){
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
-                        SET t.item_value = {string:item_value}
+                        SET t.item_value = {string:item_value},
+							t.itemprop = {string:itemprop_name}
                         WHERE t.id_topic = {int:id_topic}
                         AND t.id_itemprop = {int:id_itemprop}
 						AND t.itemprop_subtype = {string:subtype}',
@@ -284,6 +285,7 @@ class LoadSchemaMN
                             'id_topic' => $id_topic,
                             'id_itemprop' => $id,
 							'subtype' => 'NO',
+							'itemprop_name' => $values['itemprop'],
                         )
                     );
                 }else{
@@ -307,7 +309,8 @@ class LoadSchemaMN
                 if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, true)){
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
-                        SET t.item_value = {string:item_value}
+                        SET t.item_value = {string:item_value},
+							t.itemprop = {string:itemprop_name}
                         WHERE t.id_topic = {int:id_topic}
                         AND t.id_itemprop = {int:id_itemprop}
 						AND t.itemprop_subtype = {string:subtype}',
@@ -316,6 +319,7 @@ class LoadSchemaMN
                             'id_topic' => $id_topic,
                             'id_itemprop' => $id,
 							'subtype' => 'SI',
+							'itemprop_name' => $values['itemprop'],
                         )
                     );
                 }else{
