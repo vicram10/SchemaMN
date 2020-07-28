@@ -734,21 +734,24 @@ class SchemaMN
                 $prop_values = LoadSchemaMN::getSubItempropValues($value['itemprop_id']);
                 
                 //ini -> div
-                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+				Ini:
+                if (empty($itemprop_main)){
                     $schema .= '
                     <div itemprop="'. $prop_values[$value['itemprop_id']]['itemprop_main'] .'" itemscope itemtype="'. $prop_values[$value['itemprop_id']]['url_schema'] .'">
                     <p><strong>'. $prop_values[$value['itemprop_id']]['prop_label'].'</strong></p>';
                     $itemprop_main = $prop_values[$value['itemprop_id']]['itemprop_main'];
                 }
-                //itemprops
-                $schema .= '
-                    <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';
-
-                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+				//end div itemprop
+				if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
                     $schema .= '
                     </div>';//end -> div schema
                     $itemprop_main = '';
+					goto Ini;
                 }
+				
+                //itemprops
+                $schema .= '
+                    <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';
             }
             if ($show_subtypes){
                 $schema .= '
