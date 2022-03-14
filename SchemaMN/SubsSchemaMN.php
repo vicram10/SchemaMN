@@ -698,11 +698,6 @@ class SchemaMN
         LoadSchemaMN::setFieldsValues($schema_id, $topicOptions['id']);
     }
 
-    //add column mnschema_values
-    public static function DisplayTopic(&$topic_selects, &$topic_tables, &$topic_parameters){
-        $topic_selects[] = 't.mnschema_values AS schema_value';
-    }
-
     //prepare display context hooks
     public static function PrepareDisplayContext(&$output, &$message, $counter){
         global $topic, $context;

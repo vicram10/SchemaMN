@@ -241,17 +241,19 @@ class LoadSchemaMN
     }
 
     //return true if exists, else false
-    public static function ExistsItempropTopic($id, $id_topic){
+    public static function ExistsItempropTopic($id, $id_topic, $itemprop_depends = ""){
         global $smcFunc;
         $exists = 0;
         $sql = $smcFunc['db_query']('',
             'SELECT count(1)
             FROM {db_prefix}mnschemas_topics t
             WHERE t.id_itemprop = {int:id_itemprop}
-            AND t.id_topic = {int:id_topic}', 
+            AND t.id_topic = {int:id_topic}
+            AND t.itemprop_depends = "{string:itemprop_depends}"', 
             array(
                 'id_itemprop' => $id,
                 'id_topic' => $id_topic,
+                'itemprop_depends' => !empty($itemprop_depends) ? $itemprop_depends : '' // fixed issues #4
             )
         );
         list($exists) = $smcFunc['db_fetch_row']($sql);
@@ -263,12 +265,18 @@ class LoadSchemaMN
         global $context, $smcFunc;
         $topic = $id_topic;
         $schema_values = array();
+        
         //load all fields
         LoadSchemaMN::getFieldsSchemaBoard($schema_id);
+
         if (count($context['fields_itemprop']) > 0){
+            
             foreach($context['fields_itemprop'] as $id => $values){
+                
                 $itemprop = !empty($_POST['itemprop_'.$id]) ? $_POST['itemprop_'.$id] : '';
-                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic)){
+                
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, false))
+                {                    
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
                         SET t.item_value = {string:item_value}
@@ -280,6 +288,7 @@ class LoadSchemaMN
                             'id_itemprop' => $id,
                         )
                     );
+
                     //delete the itemprops emptys
                     $smcFunc['db_query']('',
                         "DELETE FROM {db_prefix}mnschemas_topics t WHERE t.id_topic = {int:id_topic} AND t.id_itemprop = {int:id_itemprop} AND t.item_value = ''",
@@ -303,30 +312,50 @@ class LoadSchemaMN
                 }
             }
         }
+
         if (count($context['fields_itemprop_sub']) > 0){
             foreach($context['fields_itemprop_sub'] as $id => $values){
+                
                 $itemprop = !empty($_POST['itemprop_sub_'.$id]) ? $_POST['itemprop_sub_'.$id] : '';
-                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic)){
+
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, true)){
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
                         SET t.item_value = {string:item_value}
                         WHERE t.id_topic = {int:id_topic}
-                        AND t.id_itemprop = {int:id_itemprop}',
+                        AND t.id_itemprop = {int:id_itemprop}
+                        AND t.itemprop_depends = {string:itemprop_depends}',
                         array(
                             'item_value' => $itemprop,
                             'id_topic' => $id_topic,
                             'id_itemprop' => $id,
+                            'itemprop_depends' => $values['itemprop']
                         )
                     );
                 }else{
                     if (!empty($itemprop)){
                         //add itemprops
                         $smcFunc['db_insert']('ignore', '{db_prefix}mnschemas_topics',
-                        array('reg_id' => 'int', 'id_schema' => 'int', 'schema_id' => 'string-255', 'id_topic' => 'int', 
-                            'id_itemprop' => 'int', 'itemprop' => 'string-255', 'item_value' => 'string', 'itemprop_subtype' => 'string-255', 
+                        array(
+                            'reg_id' => 'int', 
+                            'id_schema' => 'int', 
+                            'schema_id' => 'string-255', 
+                            'id_topic' => 'int', 
+                            'id_itemprop' => 'int', 
+                            'itemprop' => 'string-255', 
+                            'item_value' => 'string', 
+                            'itemprop_subtype' => 'string-255', 
                             'itemprop_depends' => 'string-255'),
-                            array(0, $schema_id, $values['schema_main'], $topic, 
-                                $id, $values['subprop'], $itemprop, '', $values['itemprop']),
+                            array(0, //reg_id
+                                $schema_id, //id_schema
+                                $values['schema_main'], //schema_id 
+                                $topic, //id_topic
+                                $id, //id_itemprop
+                                $values['subprop'], //itemprop 
+                                $itemprop, //item_value
+                                '',  //itemprop_subtype
+                                $values['itemprop'] //itemprop_depends
+                            ),
                             array('reg_id'),
                             1
                         );
@@ -336,4 +365,5 @@ class LoadSchemaMN
         }
     }
 }
+
 ?>
