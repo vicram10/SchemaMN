@@ -182,7 +182,7 @@ class SchemaMN
                         $prop_other_label = $_POST['schmn_prop_label_'.$i];
                         //add others prop
                         $smcFunc['db_insert']('ignore', '{db_prefix}mnschemas_prop',
-                        array('id' => 'int', 'schema_id' => 'int', 'schema_prop' => 'string-255', 'schema_prop_label' => 'string-255'),
+                        array('id' => 'int', 'schema_id' => 'int', 'schema_prop' => 'string-255', 'schema_prop_label' => 'string-255'), //fixed issue #6, 13032022, vicram10
                             array(0, $id_type, $prop_other, $prop_other_label),
                             array('id'),
                             1
