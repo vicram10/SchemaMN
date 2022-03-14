@@ -238,7 +238,7 @@
 
     //Schema Field for topics table
     //id_schema from topics
-    /*$smcFunc['db_add_column'](
+    $smcFunc['db_add_column'](
         '{db_prefix}topics',
         array(
             'name'    => 'mnschema_id',
@@ -248,5 +248,5 @@
         array(),
         'default',
         'do_nothing'
-    );*/
+    );
 ?>
