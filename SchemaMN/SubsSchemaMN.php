@@ -182,7 +182,7 @@ class SchemaMN
                         $prop_other_label = $_POST['schmn_prop_label_'.$i];
                         //add others prop
                         $smcFunc['db_insert']('ignore', '{db_prefix}mnschemas_prop',
-                        array('id' => 'int', 'schema_id' => 'int', 'schema_prop' => 'string-255', 'schema_subprop_label' => 'string-255'),
+                        array('id' => 'int', 'schema_id' => 'int', 'schema_prop' => 'string-255', 'schema_prop_label' => 'string-255'),
                             array(0, $id_type, $prop_other, $prop_other_label),
                             array('id'),
                             1
@@ -734,24 +734,21 @@ class SchemaMN
                 $prop_values = LoadSchemaMN::getSubItempropValues($value['itemprop_id']);
                 
                 //ini -> div
-				Ini:
-                if (empty($itemprop_main)){
+                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
                     $schema .= '
                     <div itemprop="'. $prop_values[$value['itemprop_id']]['itemprop_main'] .'" itemscope itemtype="'. $prop_values[$value['itemprop_id']]['url_schema'] .'">
                     <p><strong>'. $prop_values[$value['itemprop_id']]['prop_label'].'</strong></p>';
                     $itemprop_main = $prop_values[$value['itemprop_id']]['itemprop_main'];
                 }
-				//end div itemprop
-				if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
-                    $schema .= '
-                    </div>';//end -> div schema
-                    $itemprop_main = '';
-					goto Ini;
-                }
-				
                 //itemprops
                 $schema .= '
                     <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';
+
+                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+                    $schema .= '
+                    </div>';//end -> div schema
+                    $itemprop_main = '';
+                }
             }
             if ($show_subtypes){
                 $schema .= '
