@@ -249,7 +249,7 @@ class LoadSchemaMN
             FROM {db_prefix}mnschemas_topics t
             WHERE t.id_itemprop = {int:id_itemprop}
             AND t.id_topic = {int:id_topic}
-            AND t.itemprop_depends = "{string:itemprop_depends}"', 
+            AND t.itemprop_depends = {string:itemprop_depends}', 
             array(
                 'id_itemprop' => $id,
                 'id_topic' => $id_topic,
@@ -271,11 +271,12 @@ class LoadSchemaMN
 
         if (count($context['fields_itemprop']) > 0){
             
-            foreach($context['fields_itemprop'] as $id => $values){
+            foreach($context['fields_itemprop'] as $id => $values)
+            {
                 
                 $itemprop = !empty($_POST['itemprop_'.$id]) ? $_POST['itemprop_'.$id] : '';
                 
-                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, false))
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, ""))
                 {                    
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
@@ -318,7 +319,7 @@ class LoadSchemaMN
                 
                 $itemprop = !empty($_POST['itemprop_sub_'.$id]) ? $_POST['itemprop_sub_'.$id] : '';
 
-                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, true)){
+                if (LoadSchemaMN::ExistsItempropTopic($id, $id_topic, $values['itemprop'])){
                     $smcFunc['db_query']('',
                         'UPDATE {db_prefix}mnschemas_topics t
                         SET t.item_value = {string:item_value}

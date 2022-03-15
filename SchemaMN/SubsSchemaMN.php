@@ -704,28 +704,41 @@ class SchemaMN
         $id_first_message = LoadSchemaMN::getTopicFirstMessageId($topic);
         $body = $output['body'];
         $schema = '';
-        if ($output['id'] == $id_first_message){
+        if ($output['id'] == $id_first_message)
+        {
             LoadSchemaMN::getTopicSchemaOptions($topic);
+            
             if (empty($context['id_schema'])){return;}
+
             if (empty($context['schema_props']) && empty($context['schema_subprops'])){return;}
+            
             $print_div = true;
-            foreach($context['schema_props'] as $id => $value){
+            
+            foreach($context['schema_props'] as $id => $value)
+            {
                 $prop_values = LoadSchemaMN::getItempropValues($value['itemprop_id']);
+                
                 //ini -> div
                 if ($print_div){
                     $schema .= '
                     <div style="background:lightyellow;border:1px solid lightyellow;padding:10px;margin-top:20px;margin-bottom:20px;box-shadow: 0px 10px 10px gainsboro;" itemscope itemtype="'. $prop_values[$id]['url_schema'] .'">';
                     $print_div = false;
                 }
+                
                 //itemprops
                 $schema .= '
                     <p><span style="font-weight:bold;">'. $prop_values[$value['itemprop_id']]['label'] .':</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. (in_array($prop_values[$value['itemprop_id']]['itemprop'], array('image')) ? $value['itemprop_value'] : $value['itemprop_value']) .'</span></p>';
                 
             }
+            
             $show_subtypes = false;
+            
             $itemprop_main = '';
-            foreach($context['schema_subprops'] as $id => $value){
+
+            foreach($context['schema_subprops'] as $id => $value)
+            {
                 $show_subtypes = true;
+                
                 $prop_values = LoadSchemaMN::getSubItempropValues($value['itemprop_id']);
                 
                 //ini -> div
