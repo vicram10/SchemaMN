@@ -292,10 +292,11 @@ class LoadSchemaMN
 
                     //delete the itemprops emptys
                     $smcFunc['db_query']('',
-                        "DELETE FROM {db_prefix}mnschemas_topics t WHERE t.id_topic = {int:id_topic} AND t.id_itemprop = {int:id_itemprop} AND t.item_value = ''",
+                        "DELETE FROM {db_prefix}mnschemas_topics t WHERE t.id_topic = {int:id_topic} AND t.id_itemprop = {int:id_itemprop} AND t.item_value = {string:item_value}",
                         array(
                             'id_topic' => $id_topic,
                             'id_itemprop' => $id,
+                            'item_value' => ''
                         )
                     );
                 }else{
