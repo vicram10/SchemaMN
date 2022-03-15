@@ -519,7 +519,7 @@ class SchemaMN
 
             //subtype
             $sqlSub = $smcFunc['db_query']('',
-                'SELECT s.id, s.schema_prop subprop
+                'SELECT s.id, s.schema_prop subprop, s.schema_subprop_label
                 FROM {db_prefix}mnschemas_subprop s
                 WHERE s.schema_prop_id = {int:id_prop}',
                 array(
@@ -529,6 +529,7 @@ class SchemaMN
             while($row = $smcFunc['db_fetch_assoc']($sqlSub)){
                 $context['mnschema_prop'][$id]['subprop'][$row['id']] = array(
                     'name' => $row['subprop'],
+                    'label' => $row['schema_subprop_label']
                 );
             }
             $smcFunc['db_free_result']($sqlSub);
@@ -700,7 +701,7 @@ class SchemaMN
 
     //prepare display context hooks
     public static function PrepareDisplayContext(&$output, &$message, $counter){
-        global $topic, $context;
+        global $topic, $context, $txt;
         $id_first_message = LoadSchemaMN::getTopicFirstMessageId($topic);
         $body = $output['body'];
         $schema = '';
@@ -721,7 +722,8 @@ class SchemaMN
                 //ini -> div
                 if ($print_div){
                     $schema .= '
-                    <div style="background:lightyellow;border:1px solid lightyellow;padding:10px;margin-top:20px;margin-bottom:20px;box-shadow: 0px 10px 10px gainsboro;" itemscope itemtype="'. $prop_values[$id]['url_schema'] .'">';
+                    <div style="background:lightyellow;border:1px solid lightyellow;padding:10px;margin-top:20px;margin-bottom:20px;box-shadow: 0px 10px 10px gainsboro;" itemscope itemtype="'. $prop_values[$id]['url_schema'] .'">
+                        <p style="font-weight:bold;text-decoration:underline;margin-bottom:10px;">'. $txt['schmn_title_topic'] .'</p>';                    
                     $print_div = false;
                 }
                 
@@ -743,6 +745,12 @@ class SchemaMN
                 
                 //ini -> div
                 if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
+
+                    if (!empty($itemprop_main)){
+                        $schema .= '
+                        </div>';//end -> last div schema                         
+                    }
+
                     $schema .= '
                     <div itemprop="'. $prop_values[$value['itemprop_id']]['itemprop_main'] .'" itemscope itemtype="'. $prop_values[$value['itemprop_id']]['url_schema'] .'">
                     <p><strong>'. $prop_values[$value['itemprop_id']]['prop_label'].'</strong></p>';
@@ -750,13 +758,7 @@ class SchemaMN
                 }
                 //itemprops
                 $schema .= '
-                    <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';
-
-                if ($itemprop_main != $prop_values[$value['itemprop_id']]['itemprop_main']){
-                    $schema .= '
-                    </div>';//end -> div schema
-                    $itemprop_main = '';
-                }
+                    <p><span><u>'. $prop_values[$value['itemprop_id']]['label'] .'</u>:</span> <span itemprop="'. $prop_values[$value['itemprop_id']]['itemprop'] .'">'. $value['itemprop_value'] .'</span></p>';                
             }
             if ($show_subtypes){
                 $schema .= '

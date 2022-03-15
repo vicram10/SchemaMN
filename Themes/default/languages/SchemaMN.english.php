@@ -39,6 +39,7 @@ $txt['schmn_enable'] = 'Activado';
 $txt['schmn_disable'] = 'Desactivado';
 $txt['schmn_view'] = 'Visualizar';
 $txt['schmn_new_topic'] = 'Crear Tema';
+$txt['schmn_title_topic'] = 'Datos Estructurados [Mod. Schema MN]';
 
 //msgs
 $txt['schmn_title_notify'] = 'Mod. Schema - Avisa';

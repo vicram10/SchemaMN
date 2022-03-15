@@ -285,10 +285,10 @@
                             <tr class="windowbg">
                                 <td>', $id ,' - ', $schema['type'] ,'</td>
                                 <td>
-                                    ', $schema['status'] == 'ENABLED' ? '<span class="badge badge-success">'.$txt['schmn_enable'].'</span>' : '<span class="badge badge-error">'.$txt['schmn_disable'].'</span>' ,' ', $schema['itemprop'], ' (', $schema['itemprop_label'] ,')' , !empty($schema['prop_itemtype']) ? ' - <span class="badge badge-warning">'. $schema['prop_itemtype'] . '</span>' : '' ,'&nbsp;&nbsp;', count($schema['subprop']) > 0 ? '<img id="schm_view_subtype" style="vertical-align:middle;cursor:pointer;" src="'. $boardurl .'/Sources/SchemaMN/img/view.png" alt="'. $txt['schmn_view'] .'" />' : '';
+                                    ', $schema['status'] == 'ENABLED' ? '<span class="badge badge-success">'.$txt['schmn_enable'].'</span>' : '<span class="badge badge-error">'.$txt['schmn_disable'].'</span>' ,' ', $schema['itemprop'], ' (', $schema['itemprop_label'] ,')' , !empty($schema['prop_itemtype']) ? ' - <span class="badge badge-warning">'. $schema['prop_itemtype'] . '</span>' : '' ,'&nbsp;&nbsp;', count($schema['subprop']) > 0 ? '<img class="schm_view_subtype" data-child="subtypes_list_'.$id.'" style="vertical-align:middle;cursor:pointer;" src="'. $boardurl .'/Sources/SchemaMN/img/view.png" alt="'. $txt['schmn_view'] .'" />' : '';
                                     if (count($schema['subprop']) > 0){
                                         echo '
-                                        <div id="subtypes_list" style="display:none;padding:10px;">
+                                        <div id="subtypes_list_',$id,'" style="display:none;padding:10px;">
                                             <ol>';
                                         foreach($schema['subprop'] as $value){
                                             echo '
@@ -372,6 +372,14 @@
                             </dt>
                             <dd>
                                 <input type="text" name="prop_', $id ,'" value="', $value['name'] ,'" size="30" disabled />
+                            </dd>
+                            <dt>
+                                <strong>', $txt['schmn_prop_label']  ,'</strong>
+                                <br>
+                                <span class="smalltext">', $txt['schmn_type_label_desc'] ,'</span>
+                            </dt>
+                            <dd>
+                                <input type="text" name="schmn_prop_label_', $id ,'" value="', $value['label'] ,'" size="30" disabled />
                             </dd>
                         </dl>';
                         $count++;

@@ -32,8 +32,12 @@ $(document).ready(function() {
         });
     });
 
-    $('#schm_view_subtype').click(function(){
-        $('#subtypes_list').toggle();('slow');
+    $('.schm_view_subtype').click(function(){
+
+        var id_list = $(this).data('child');
+
+        $('#'+id_list).toggle();('slow');
+
     });
 });
 

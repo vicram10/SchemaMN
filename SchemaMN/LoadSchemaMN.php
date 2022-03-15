@@ -200,7 +200,7 @@ class LoadSchemaMN
             FROM {db_prefix}mnschemas_topics t
             WHERE t.id_topic = {int:id_topic}
             AND t.itemprop_depends != ''
-            ORDER BY t.id_itemprop",
+            ORDER BY t.itemprop_depends, t.id_itemprop",
             array(
                 'id_topic' => $id_topic,
             )
